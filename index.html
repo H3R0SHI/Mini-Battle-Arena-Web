@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Battle Arena</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/ui.css">
+    <link rel="stylesheet" href="styles/game.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-functions-compat.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="screen active">
+        <div class="loading-content">
+            <h1>Mini Battle Arena</h1>
+            <div class="loading-spinner"></div>
+            <p>Loading warriors...</p>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="mainMenu" class="screen">
+        <div class="menu-header">
+            <h1>Mini Battle Arena</h1>
+            <div class="player-info">
+                <div class="player-avatar"></div>
+                <div class="player-details">
+                    <span class="player-name">Warrior</span>
+                    <div class="player-rank">
+                        <span class="rank-icon">🥉</span>
+                        <span class="rank-name">Bronze</span>
+                    </div>
+                    <div class="xp-bar">
+                        <div class="xp-fill"></div>
+                        <span class="xp-text">125/200 XP</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-buttons">
+            <button class="btn btn-primary btn-large" id="playBtn">
+                <span class="btn-icon">⚔️</span>
+                BATTLE
+            </button>
+            <button class="btn btn-secondary" id="shopBtn">
+                <span class="btn-icon">🛒</span>
+                SHOP
+            </button>
+            <button class="btn btn-secondary" id="battlePassBtn">
+                <span class="btn-icon">🎯</span>
+                BATTLE PASS
+            </button>
+            <button class="btn btn-secondary" id="leaderboardBtn">
+                <span class="btn-icon">🏆</span>
+                LEADERBOARD
+            </button>
+            <button class="btn btn-secondary" id="profileBtn">
+                <span class="btn-icon">👤</span>
+                PROFILE
+            </button>
+        </div>
+
+        <div class="daily-mission">
+            <h3>Daily Mission</h3>
+            <p>Win 2 matches as Ninja (1/2)</p>
+            <div class="mission-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 50%"></div>
+                </div>
+                <span class="mission-reward">+100 XP</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matchmaking Screen -->
+    <div id="matchmakingScreen" class="screen">
+        <div class="matchmaking-content">
+            <h2>Finding Opponent...</h2>
+            <div class="matchmaking-spinner"></div>
+            <p>Estimated wait time: <span id="waitTime">15s</span></p>
+            <button class="btn btn-secondary" id="cancelMatchmaking">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Character Select -->
+    <div id="characterSelect" class="screen">
+        <div class="character-select-header">
+            <h2>Choose Your Warrior</h2>
+            <button class="btn btn-secondary back-btn" id="backToMenu">← Back</button>
+        </div>
+        <div class="character-grid" id="characterGrid">
+            <!-- Characters will be populated by JavaScript -->
+        </div>
+        <div class="character-info">
+            <h3 id="selectedCharacterName">Ninja</h3>
+            <p id="selectedCharacterDesc">Fast and agile warrior with quick strikes</p>
+            <div class="character-stats">
+                <div class="stat">
+                    <span>Speed</span>
+                    <div class="stat-bar"><div class="stat-fill" style="width: 90%"></div></div>
+                </div>
+                <div class="stat">
+                    <span>Attack</span>
+                    <div class="stat-bar"><div class="stat-fill" style="width: 70%"></div></div>
+                </div>
+                <div class="stat">
+                    <span>Defense</span>
+                    <div class="stat-bar"><div class="stat-fill" style="width: 50%"></div></div>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="selectCharacterBtn">Select Warrior</button>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <div id="gameScreen" class="screen">
+        <div class="game-hud">
+            <div class="hud-top">
+                <div class="player-hud left">
+                    <div class="player-name">You</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="playerHealth"></div>
+                    </div>
+                </div>
+                <div class="game-timer">
+                    <span id="gameTimer">30</span>
+                </div>
+                <div class="player-hud right">
+                    <div class="player-name">Opponent</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="opponentHealth"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="game-controls">
+            <div class="control-joystick" id="joystick">
+                <div class="joystick-knob"></div>
+            </div>
+            <button class="control-action" id="actionBtn">
+                <span class="action-icon">⚔️</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victoryScreen" class="screen">
+        <div class="victory-content">
+            <h1 id="victoryTitle">VICTORY!</h1>
+            <div class="victory-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Damage Dealt</span>
+                    <span class="stat-value" id="damageDealt">245</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Hits Landed</span>
+                    <span class="stat-value" id="hitsLanded">12</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Time Survived</span>
+                    <span class="stat-value" id="timeSurvived">30s</span>
+                </div>
+            </div>
+            <div class="victory-rewards">
+                <h3>Rewards</h3>
+                <div class="reward-item">
+                    <span class="reward-icon">💰</span>
+                    <span class="reward-text">+50 Coins</span>
+                </div>
+                <div class="reward-item">
+                    <span class="reward-icon">⭐</span>
+                    <span class="reward-text">+25 XP</span>
+                </div>
+            </div>
+            <div class="victory-buttons">
+                <button class="btn btn-primary" id="rematchBtn">Rematch</button>
+                <button class="btn btn-secondary" id="mainMenuBtn">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Screen -->
+    <div id="shopScreen" class="screen">
+        <div class="shop-header">
+            <h2>Battle Shop</h2>
+            <div class="currency">
+                <span class="coin-icon">💰</span>
+                <span id="playerCoins">1,250</span>
+            </div>
+            <button class="btn btn-secondary back-btn" id="shopBackBtn">← Back</button>
+        </div>
+        <div class="shop-tabs">
+            <button class="shop-tab active" data-tab="skins">Character Skins</button>
+            <button class="shop-tab" data-tab="weapons">Weapon Trails</button>
+            <button class="shop-tab" data-tab="emotes">Victory Dances</button>
+        </div>
+        <div class="shop-content" id="shopContent">
+            <!-- Shop items will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div id="settingsOverlay" class="overlay">
+        <div class="overlay-content">
+            <h3>Settings</h3>
+            <div class="setting-item">
+                <label>Sound Effects</label>
+                <input type="range" min="0" max="100" value="80" id="sfxVolume">
+            </div>
+            <div class="setting-item">
+                <label>Music</label>
+                <input type="range" min="0" max="100" value="60" id="musicVolume">
+            </div>
+            <div class="setting-item">
+                <label>Vibration</label>
+                <input type="checkbox" checked id="vibrationEnabled">
+            </div>
+            <button class="btn btn-primary" id="closeSettings">Close</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/config/firebase-config.js"></script>
+    <script src="js/core/game-engine.js"></script>
+    <script src="js/core/physics.js"></script>
+    <script src="js/core/input-manager.js"></script>
+    <script src="js/systems/character-system.js"></script>
+    <script src="js/systems/arena-system.js"></script>
+    <script src="js/systems/battle-system.js"></script>
+    <script src="js/systems/progression-system.js"></script>
+    <script src="js/ui/ui-manager.js"></script>
+    <script src="js/ui/screen-manager.js"></script>
+    <script src="js/multiplayer/matchmaking.js"></script>
+    <script src="js/multiplayer/firebase-manager.js"></script>
+    <script src="js/monetization/shop-system.js"></script>
+    <script src="js/monetization/ads-manager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
